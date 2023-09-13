@@ -1,5 +1,32 @@
 
 import torch
+import pickle
+import os
+from utils.logger import Logger
+
+
+def save(data, data_path):
+    with open(data_path, "wb") as f:
+        pickle.dump(data, f)
+
+
+def create_model_dir(args):
+    run_id = f'id={args.identifier}'
+    task = f'task={args.task}'
+    model_dir = os.path.join(
+        args.outputs_dir, run_id, task
+    )
+    run_hp = os.path.join(
+        f"opt={args.optimizer}_{args.lr}",
+        f"sam={args.scaled_max}_{args.rho}",
+        f"decay={args.decay_type}_{args.decay_rate}",
+        f"prune={args.prune_threshold}",
+        f"seed={args.seed}"
+    )
+    model_dir = os.path.join(model_dir, run_hp)
+    os.makedirs(model_dir, exist_ok=True)
+
+    return model_dir
 
 
 @ torch.no_grad()
@@ -54,7 +81,7 @@ def check_sparsity(model, eps=1e-8, show_results=True):
     total_params = sum((p.numel() for p in model.parameters()))
     sparsity = 1 - nonzeros / total_params
     if show_results:
-        print(f"Sparsity = {100 * sparsity:.2f}%")
+        Logger.get().debug(f"Sparsity = {100 * sparsity:.2f}%")
     return sparsity
 
 

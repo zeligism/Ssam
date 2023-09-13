@@ -1,1 +1,4 @@
 data/
+outputs/
+logs/
+__pycache__/

@@ -1,6 +1,6 @@
 
 import torch
-from decoupled_decay import DecoupledDecay
+from optim_wrappers.decoupled_decay import DecoupledDecay
 
 
 class SAMBase(torch.optim.Optimizer):

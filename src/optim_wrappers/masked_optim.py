@@ -1,6 +1,6 @@
 
 import torch
-from ..utils import *
+from utils.utils import *
 
 class MaskedOptimizer(torch.optim.Optimizer):
     def __init__(self, *args, prune_threshold=1e-8, **kwargs):

@@ -49,15 +49,17 @@ class DecoupledDecay(torch.optim.Optimizer):
                 # store decay
                 self.decay[p] = decay
 
-    def _apply_decay(self):
+    def _apply_decay(self, eps=1e-1):
         for group in self.param_groups:
             for p in group['params']:
                 if self.decay[p] is not None:
                     # XXX: decay proportional to sqrt(v) + 0.1?
-                    eps = 1e-1
-                    bias_correction2 = 1 - group["betas"][1] ** self.state[p]["step"]
-                    vsqrt = self.state[p]["exp_avg_sq"].div(bias_correction2).sqrt().add(eps)
-                    p.sub_(self.decay[p] * vsqrt, alpha=group['lr'] * self.decay_rate)
+                    pstate = self.state[p]
+                    vsqrt = 1
+                    if "betas" in group and "exp_avg_sq" in pstate:
+                        bias_correction2 = 1 - group["betas"][1] ** pstate["step"]
+                        vsqrt = pstate["exp_avg_sq"].div(bias_correction2).sqrt().add(eps)
+                    p.sub_(self.decay[p].mul(vsqrt), alpha=group['lr'] * self.decay_rate)
                     self.decay[p] = None
 
     @torch.no_grad()
