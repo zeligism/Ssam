@@ -49,7 +49,7 @@ class SAMBase(torch.optim.Optimizer):
 
                 # how to scale max step
                 if self.scaled_max == "none":
-                    denom = torch.ones(1)
+                    denom = torch.ones_like(p.grad)
                     g = p.grad
                 elif self.scaled_max == "adam" and "exp_avg_sq" in self.state[p]:
                     bias_correction1 = 1 - group["betas"][0] ** self.state[p]["step"]
@@ -60,7 +60,6 @@ class SAMBase(torch.optim.Optimizer):
                 elif self.scaled_max == "gradnorm":
                     denom = grad_norm.add(eps).to(p)
                     g = p.grad
-
                 else:
                     raise NotImplementedError(self.scaled_max)
 
