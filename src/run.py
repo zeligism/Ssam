@@ -160,8 +160,11 @@ def main(args):
 
     save(data, os.path.join(model_dir, "data.pl"))
 
+
 if __name__ == "__main__":
     args = get_args(sys.argv)
     Logger.setup_logging(args.loglevel, logfile=args.logfile)
     Logger()
+    Logger.get().debug(args)
     main(args)
+    torch.cuda.empty_cache()

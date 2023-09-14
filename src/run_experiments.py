@@ -43,6 +43,7 @@ def run_experiments():
 
     for hp in HP_GRID:
         hp_dict = dict(zip(HP_DICT.keys(), hp))
+        # Create arg namespace to pass to train
         args = get_args(None, namespace=Namespace(**hp_dict))
 
         model_dir = create_model_dir(args)
@@ -50,11 +51,13 @@ def run_experiments():
 
         if os.path.exists(data_path):
             continue  # skip if another job already started on this
-        else:
-            save([], data_path)  # create empty log file to reserve this job
 
-        # Create arg namespace to pass to train
-        main(args) if not DRY_RUN else print(args)
+        try:
+            open(data_path, 'a').close()
+            main(args) if not DRY_RUN else print(args)
+        except:
+            Logger.get().error(f"Encountered an error. Removing empty data file '{data_path}'.")
+            os.remove(data_path)
 
 
 if __name__ == "__main__":
