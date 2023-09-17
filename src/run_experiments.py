@@ -55,9 +55,10 @@ def run_experiments():
         try:
             open(data_path, 'a').close()
             main(args) if not DRY_RUN else print(args)
-        except:
+        except Exception as e:
             Logger.get().error(f"Encountered an error. Removing empty data file '{data_path}'.")
             os.remove(data_path)
+            raise
 
 
 if __name__ == "__main__":
