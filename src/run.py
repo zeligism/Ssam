@@ -20,6 +20,7 @@ from optim_wrappers.decoupled_decay import DecoupledDecay
 from optim_wrappers.masked_optim import MaskedOptimizer
 from optim_wrappers.sam import SAM, SADAM
 
+IMAGE_SIZE = 32
 OPTIMIZER_LOOKUP = {
     "sgd": SAM,
     "sgd-mom": SAM,
@@ -37,8 +38,7 @@ def init_model(task="lenet"):
         model = ResNet9()
 
     elif task.startswith("vit"):
-        # XXX
-        model = SimpleViT(image_size=32,
+        model = SimpleViT(image_size=IMAGE_SIZE,
                           patch_size=16,  # patch_size=8,
                           num_classes=10,  # for cifar 10 and mnist
                           dim=128,
@@ -63,10 +63,9 @@ def load_dataset(root, task="lenet"):
     elif task.startswith("resnet") or task.startswith("vit"):
         if 'mnist' in task:
             ### MNIST ###
-            image_size = 32
             transform = transforms.Compose([
                 transforms.Grayscale(3),
-                transforms.Resize(image_size),
+                transforms.Resize(IMAGE_SIZE),
                 transforms.ToTensor(),
                 transforms.Normalize((0.5,), (0.5,)),
             ])
@@ -77,7 +76,7 @@ def load_dataset(root, task="lenet"):
             cifar_mean = (0.4914, 0.4822, 0.4465)
             cifar_std = (0.2023, 0.1994, 0.2010)
             train_transform = transforms.Compose([
-                transforms.RandomCrop(image_size, padding=4),
+                transforms.RandomCrop(IMAGE_SIZE, padding=4),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 transforms.Normalize(cifar_mean, cifar_std)
