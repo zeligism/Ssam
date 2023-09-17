@@ -51,11 +51,12 @@ class SAMBase(torch.optim.Optimizer):
                 if self.scaled_max == "none":
                     denom = torch.ones_like(p)
                     g = p.grad
-                elif self.scaled_max == "adam" and "exp_avg_sq" in self.state[p]:
-                    bias_correction1 = 1 - group["betas"][0] ** self.state[p]["step"]
-                    bias_correction2 = 1 - group["betas"][1] ** self.state[p]["step"]
-                    denom = self.state[p]["exp_avg_sq"].div(bias_correction2).sqrt().add(0.1)
-                    # g = self.state[p]["exp_avg"].div(bias_correction1)
+                elif self.scaled_max == "adam":
+                    if "exp_avg_sq" in self.state[p]:
+                        bias_correction2 = 1 - group["betas"][1] ** self.state[p]["step"]
+                        denom = self.state[p]["exp_avg_sq"].div(bias_correction2).sqrt().add(0.1)
+                    else:
+                        denom = torch.ones_like(p)
                     g = p.grad
                 elif self.scaled_max == "gradnorm":
                     denom = grad_norm.add(eps).to(p)
