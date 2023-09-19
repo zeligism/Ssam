@@ -66,11 +66,13 @@ class SAMBase(torch.optim.Optimizer):
 
                 # adjust based on ord p (as in ||e||p <= 1)
                 if self.sam_ord == 1:
-                    denom = denom * 0 + 1
-                    g[g < g.abs().max()] = 0.
-                    g[g != 0] = 1
+                    denom = torch.ones_like(g)
+                    i_max = g.argmax()
+                    sign_max = g.view(-1)[i_max].sign()
+                    g = 0.
+                    g[i_max] = sign_max
                 elif self.sam_ord == 'inf':
-                    denom = denom * 0 + 1
+                    denom = torch.ones_like(g)
                     g = g.sign()
                 else:
                     pass
