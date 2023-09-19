@@ -69,8 +69,8 @@ class SAMBase(torch.optim.Optimizer):
                     denom = torch.ones_like(g)
                     i_max = g.argmax()
                     sign_max = g.view(-1)[i_max].sign()
-                    g = 0.
-                    g[i_max] = sign_max
+                    g.zero_()
+                    g.view(-1)[i_max] = sign_max
                 elif self.sam_ord == 'inf':
                     denom = torch.ones_like(g)
                     g = g.sign()
