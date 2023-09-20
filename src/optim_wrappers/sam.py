@@ -24,19 +24,35 @@ class SAMBase(torch.optim.Optimizer):
         super().step()  # dummy step
         self.adam_initialized = True
 
+    def _get_adam_denom(self, group, p, eps=1e-8):
+        if "exp_avg_sq" in self.state[p]:
+            bias_correction2 = 1 - group["betas"][1] ** self.state[p]["step"]
+            denom = self.state[p]["exp_avg_sq"].div(bias_correction2).sqrt().add(eps)
+        else:
+            denom = torch.ones(1)
+        return denom
+
     def _grad_norm(self):
         # put everything on the same device, in case of model parallelism
         shared_device = self.param_groups[0]["params"][0].device
-        gradnorm = torch.stack([
-            p.grad.pow(2).sum().to(shared_device)
-            for group in self.param_groups for p in group["params"] if p.grad is not None
-        ]).sum().sqrt()
+        gradnorms = []
+        for group in self.param_groups:
+            for p in group["params"]:
+                if p.grad is None:
+                    continue
+                if self.scaled_max == 'adam':
+                    denom = self._get_adam_denom(group, p)
+                    gradnorm_i = p.grad.div(denom).pow(2).sum().to(shared_device)
+                else:
+                    gradnorm_i = p.grad.pow(2).sum().to(shared_device)
+                gradnorms.append(gradnorm_i)
+
+        gradnorm = torch.stack(gradnorms).sum().sqrt()
         return gradnorm
 
     @torch.no_grad()
     def _find_approx_constrained_max(self, eps=1e-8):
-        if self.scaled_max == "gradnorm":
-            grad_norm = self._grad_norm()
+        grad_norm = self._grad_norm()
 
         for group in self.param_groups:
             for p in group["params"]:
@@ -49,18 +65,16 @@ class SAMBase(torch.optim.Optimizer):
 
                 # how to scale max step
                 if self.scaled_max == "none":
-                    denom = torch.ones_like(p)
+                    denom = torch.ones(1)
                     g = p.grad
                 elif self.scaled_max == "adam":
-                    if "exp_avg_sq" in self.state[p]:
-                        bias_correction2 = 1 - group["betas"][1] ** self.state[p]["step"]
-                        denom = self.state[p]["exp_avg_sq"].div(bias_correction2).sqrt().add(0.1)
-                    else:
-                        denom = torch.ones_like(p)
+                    denom = self._get_adam_denom(group, p)
+                    denom = denom.mul(grad_norm)
                     g = p.grad
                 elif self.scaled_max == "gradnorm":
                     denom = grad_norm.add(eps).to(p)
                     g = p.grad
+
                 else:
                     raise NotImplementedError(self.scaled_max)
 
@@ -112,4 +126,3 @@ class SAM(SAMBase, torch.optim.SGD):
 
 class SADAM(SAMBase, torch.optim.Adam):
     pass
-
